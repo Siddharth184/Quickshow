@@ -1,0 +1,7 @@
+# In this project include dependency
+
+--react-router-dom
+--lucide-react
+--react-hot-toast
+--react-player
+
