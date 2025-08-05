@@ -1,11 +1,13 @@
-const isoTimeFormat = (dateTime) => {
-    const date = new Date(dateTime);
-    const localTime = date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-    });
-    return localTime;
-};
+export default function isoTimeFormat(timeString) {
+  if (!timeString) return "Invalid timeee";
 
-export default isoTimeFormat;
+  const date = new Date(timeString);
+
+  if (isNaN(date.getTime())) return "Invalid timee";
+
+  return date.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+}
