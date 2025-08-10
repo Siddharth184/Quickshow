@@ -25,13 +25,15 @@ export const stripeWebhooks = async (request, response) =>{
                 const { bookingId } = session.metadata;
 
                 await Booking.findByIdAndUpdate(bookingId, {
-                    isPaid: true,
-                    paymentLink: ""
+                    
+                    isPaid: "true",
+                    paymentLink: "",
                 })
+                console.log(isPaid);
 
                 await inngest.send({
                     name: "app/show.booked",
-                    date: {bookingId}
+                    data: {bookingId}
 
                 })
                 

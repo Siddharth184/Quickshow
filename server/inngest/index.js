@@ -55,21 +55,34 @@ const releaseSeatsAndDeleteBooking = inngest.createFunction(
         const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
         await step.sleepUntil('wait-for-10-minutes', tenMinutesLater);
 
-        await step. run ('check-payment-status', async () =>{
-            const bookingId = event.data.bookingId;
-            const booking = await Booking.findById(bookingId)
+        await step.run('check-payment-status', async () => {
+    const bookingId = event.data.bookingId;
+    const booking = await Booking.findById(bookingId);
 
-            // if payment is not made , release seats and delete booking
-            if(!booking.isPaid){
-                const show = await Show.findById(booking.show);
-                booking.bookedSeats.forEach((seat) => {
-                    delete show.occupiedSeats[seat]
-                });
-                show.markModified('occupiedSeats')
-                await show.save()
-                await Booking.findByIdAndDelete(booking._id)
-            }
-         })
+    if (!booking) {
+        console.error("Booking not found for ID:", bookingId);
+        return;
+    }
+
+    // If payment is not made, release seats and delete booking
+    if (!booking.isPaid) {
+        const show = await Show.findById(booking.show);
+
+        if (!show) {
+            console.error("Show not found for ID:", booking.show);
+            return;
+        }
+
+        booking.bookedSeats.forEach((seat) => {
+            delete show.occupiedSeats[seat];
+        });
+
+        show.markModified('occupiedSeats');
+        await show.save();
+        await Booking.findByIdAndDelete(booking._id);
+    }
+});
+
 
     }
 )
@@ -88,33 +101,17 @@ const sendBookingConfirmationEmail = inngest.createFunction(
         await sendEmail({
             to: booking.user.email,
             subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
-            body: `
-            <div style="max-width:600px;margin:auto;padding:20px;font-family:sans-serif;border:1px solid #ddd;border-radius:8px;background:#f9f9f9;">
-        <h2 style="text-align:center;background:#1c1c1c;color:#fff;padding:15px;border-radius:5px 5px 0 0;">
-          🎟️ Booking Confirmed!
-        </h2>
-        <p>Hello <strong>${booking.user.name}</strong>,</p>
-        <p>Thank you for booking with <strong>CinemaX</strong>. Your payment has been received and your movie ticket is confirmed.</p>
-
-        <div style="background:#fff;padding:15px;border:1px dashed #aaa;margin:20px 0;border-radius:5px">
-          <p><strong>Movie:</strong> ${booking.show.movie.title}</p>
-          <p><strong>Date:</strong> ${booking.show.date}</p>
-          <p><strong>Time:</strong> ${booking.time}</p>
-          <p><strong>Seats:</strong> ${booking.bookedSeats.join(", ")}</p>
-          <p><strong>Screen:</strong> ${booking.show.theater.name}</p>
-          <p><strong>Booking ID:</strong> ${booking._id}</p>
-          <p><strong>Total Paid:</strong> ₹${booking.totalAmount}</p>
-        </div>
-
-        <p>Please bring this email to the theatre or scan your ticket QR code (if available) at the entrance.</p>
-
-        <a href="https://yourdomain.com/my-bookings" style="background:#e50914;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;display:inline-block;margin-top:15px;">
-          View Your Booking
-        </a>
-
-        <p style="font-size:12px;color:#666;margin-top:30px">If you didn’t make this booking, please contact support immediately.</p>
-        <p style="text-align:center;font-size:12px;color:#aaa;margin-top:30px">© 2025 CinemaX. All rights reserved.</p>
-      </div>`,
+            body: `<div style="font-family: Arial, sans-serif; line-height: 1.5;">
+            <h2>Hi ${booking.user.name},</h2>
+            <p>Your booking for <strong style="color: #F84565;">${booking.show.movie.title}</strong> is confirmed.</p>
+            <p>
+                <strong>Date:</strong> ${new Date(booking.show.showDateTime).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' })}<br/>
+                <strong>Time:</strong> ${new Date(booking.show.showDateTime).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })}
+            </p>
+            <p>Enjoy the show! 🍿🍿🍿</p>
+            <p>Thanks for booking with us!<br/>– Siddharth</p>
+        </div>     
+            `,
         })
     }
 )
@@ -166,29 +163,19 @@ const sendShowReminders = inngest.createFunction(
                     to: task.userEmail,
                     subject: `Reminder: Your movie "${task.movieTitle}" start soon!`,
                     body: `
-                    <div style="max-width:600px;margin:auto;padding:20px;font-family:sans-serif;border:1px solid #ddd;border-radius:8px;background:#fdfdfd;">
-                <h2 style="text-align:center;background:#ff9900;color:#fff;padding:15px;border-radius:5px 5px 0 0;">
-                  🎬 Upcoming Movie Reminder
-                </h2>
-                
-                <p>Hello <strong>${task.userName}</strong>,</p>
-                <p>This is a reminder that your movie <strong>"${task.movieTitle}"</strong> is starting soon!</p>
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2>Hello ${task.userName},</h2>
+                    <p>This is a quick reminder that your movie:</p>
+                    <h3 style="color: #F84565;">${task.movieTitle}</h3>
+                    <p>
+                        is scheduled for <strong>${new Date(task.showTime).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' })}</strong> at
+                        <strong>${new Date(task.show.showTime).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })}</strong>
+                    </p>
 
-                <div style="background:#fff;padding:15px;border:1px dashed #aaa;margin:20px 0;border-radius:5px">
-                  <p><strong>Movie:</strong> ${task.movieTitle}</p>
-                  <p><strong>Show Time:</strong> ${new Date(task.showTime).toLocaleString()}</p>
-                </div>
-
-                <p>Please arrive at the theatre at least 15–20 minutes before the showtime to avoid missing the start.</p>
-
-                <a href="https://yourdomain.com/my-bookings" style="background:#e50914;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;display:inline-block;margin-top:15px;">
-                  View My Bookings
-                </a>
-
-                <p style="font-size:12px;color:#666;margin-top:30px">If you didn’t make this booking, please contact support immediately.</p>
-                <p style="text-align:center;font-size:12px;color:#aaa;margin-top:30px">© 2025 CinemaX. All rights reserved.</p>
-              </div>
+                    <p>It starts in approximately <strong>8 hours</strong> – make sure you're ready!</p>
                     
+                    <p>Enjoy the show!<br/>– Siddharth</p>
+                </div>
                     `
                 }))
             )
