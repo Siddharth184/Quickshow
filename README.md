@@ -4,6 +4,13 @@
 It provides an interactive movie browsing experience, secure authentication, smooth ticket booking, and online payments — all deployed on Vercel.  
 
 ---
+## 🔗 Live Preview
+
+# 
+
+[**Visit Quickshow**](https://quickshow-j97x-siddharths-projects-26a0517b.vercel.app)
+
+---
 
 ## 📌 Features
 - 🔐 **Secure Authentication** with Clerk
@@ -82,7 +89,7 @@ Create `.env` files in both `client` and `server` directories with the following
 **Backend**
 
     cd server
-    npm run dev
+    npm run server
 
 **Frontend**
 
