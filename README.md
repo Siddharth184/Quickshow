@@ -8,7 +8,7 @@ It provides an interactive movie browsing experience, secure authentication, smo
 
 # 
 
-[**Visit Quickshow**](https://quickshow-j97x-siddharths-projects-26a0517b.vercel.app)
+[**Visit Quickshow**](https://quickshow-j97x.vercel.app/)
 
 ---
 
